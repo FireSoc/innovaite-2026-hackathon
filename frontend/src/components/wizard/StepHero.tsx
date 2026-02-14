@@ -155,11 +155,10 @@ export function StepHero() {
             Your relief packet,{" "}
             <Highlighter
               action="highlight"
-              color="rgb(245 158 11 / 0.15)"
-              strokeWidth={2}
+              color="rgb(251 191 36 / 0.35)"
               animationDuration={800}
-              iterations={1}
-              padding={4}
+              iterations={2}
+              padding={6}
               isView
             >
               <span className="font-extrabold text-amber-dark">
