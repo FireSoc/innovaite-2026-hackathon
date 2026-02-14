@@ -75,7 +75,9 @@ Get runway days and deferrable estimates from business numbers.
 
 ## 4. Evidence extraction (AI)
 
-Extract expense items and damage claims from uploaded files. Uses CommonStack (or Gemini).
+Extract expense items and damage claims from uploaded files. **OCR-first:** Tesseract extracts text from images/PDFs; the LLM structures and categorizes. Uses CommonStack (or Gemini).
+
+**For evidence extraction with OCR:** Install Tesseract on the host (e.g. `brew install tesseract` on macOS). If Tesseract is missing, the pipeline still runs using the LLM vision path.
 
 | Field   | Value |
 |--------|--------|

@@ -63,6 +63,7 @@ export interface ExpenseItem {
   confidence: ConfidenceLevel;
   source_file: string;
   source_text: string;
+  document_type?: string;
 }
 
 export interface RenameEntry {
@@ -75,6 +76,7 @@ export interface DamageClaim {
   label: string;
   detail: string;
   confidence: ConfidenceLevel;
+  source_file: string;
   source_text: string;
 }
 

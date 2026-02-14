@@ -1,0 +1,12 @@
+{
+  "name": "innovaite-2026-hackathon",
+  "private": true,
+  "description": "ReliefBridge / Remedy — disaster relief packet generator",
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd frontend && npm run start",
+    "frontend:install": "cd frontend && npm install",
+    "backend:install": "cd backend && pip install -r requirements.txt"
+  }
+}
