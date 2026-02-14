@@ -22,6 +22,7 @@ export function FileUpload({
     "image/jpeg": [".jpg", ".jpeg"],
     "image/png": [".png"],
     "image/webp": [".webp"],
+    "image/gif": [".gif"],
     "application/pdf": [".pdf"],
   },
   className,
@@ -99,7 +100,7 @@ export function FileUpload({
               : "Drag & drop evidence files, or click to browse"}
           </p>
           <p className="text-xs text-text-muted mt-1">
-            JPG, PNG, WebP, PDF up to {maxSizeMB}MB each ({files.length}/{maxFiles} files)
+            JPG, PNG, WebP, GIF, or PDF up to {maxSizeMB}MB each ({files.length}/{maxFiles} files)
           </p>
         </div>
       </div>

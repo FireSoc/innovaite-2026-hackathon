@@ -30,6 +30,14 @@ import {
   AlertTriangle,
   FileText,
   CheckCircle2,
+  Receipt,
+  Home,
+  Zap,
+  DollarSign,
+  ImageIcon,
+  Landmark,
+  FileSpreadsheet,
+  BadgeCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { ConfidenceLevel } from "@/lib/types";
@@ -118,6 +126,38 @@ export function StepEvidence() {
           documents. Our AI will extract and categorize everything automatically.
         </motion.p>
       </div>
+
+      {/* What to upload guidance */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.15 }}
+        className="mb-6"
+      >
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+          What to upload (JPG, PNG, WebP, GIF, or PDF)
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {[
+            { icon: <Receipt className="h-4 w-4" />, label: "Receipts & invoices" },
+            { icon: <ImageIcon className="h-4 w-4" />, label: "Damage photos" },
+            { icon: <Home className="h-4 w-4" />, label: "Lease / rent statement" },
+            { icon: <Zap className="h-4 w-4" />, label: "Utility bills" },
+            { icon: <DollarSign className="h-4 w-4" />, label: "Payroll records" },
+            { icon: <Landmark className="h-4 w-4" />, label: "Bank statements" },
+            { icon: <FileSpreadsheet className="h-4 w-4" />, label: "Tax returns" },
+            { icon: <BadgeCheck className="h-4 w-4" />, label: "Business license" },
+          ].map(({ icon, label }) => (
+            <div
+              key={label}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-dim/60 border border-border/60 text-xs text-muted-foreground"
+            >
+              <span className="text-amber shrink-0">{icon}</span>
+              <span>{label}</span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
 
       {/* Upload zone */}
       <motion.div
