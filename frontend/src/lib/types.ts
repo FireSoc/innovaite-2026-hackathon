@@ -100,6 +100,16 @@ export interface EvidenceExtractionResponse {
   missing_evidence: MissingEvidence[];
 }
 
+// --- Insights ---
+
+export type InsightUrgency = "critical" | "action_needed" | "informational";
+
+export interface KeyInsight {
+  title: string;
+  detail: string;
+  urgency: InsightUrgency;
+}
+
 // --- Packet ---
 
 export interface PacketFileEntry {
@@ -115,6 +125,8 @@ export interface ResultsSummary {
   business_name: string;
   disaster_id: string;
   one_line_summary: string;
+  key_insights: KeyInsight[];
+  urgency_level: string;
 }
 
 export interface PacketBuildResponse {

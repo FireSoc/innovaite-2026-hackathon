@@ -10,6 +10,7 @@ Produces:
   - Letters/ folder with ready-to-send PDFs
 """
 
+import asyncio
 import base64
 import csv
 import io
@@ -35,6 +36,14 @@ from app.models.actions import ChecklistItem
 from app.models.evidence import DamageClaim, ExpenseItem, MissingEvidence, RenameEntry
 from app.models.inputs import Declaration, PacketBuildRequest, UserInfo
 from app.models.outputs import DeferrableEstimate, PacketFileEntry, ResultsSummary
+from app.services.insights import (
+    ActionNarrativesResult,
+    FinancialBreakdownResult,
+    SituationAnalysisResult,
+    generate_action_narratives,
+    generate_financial_breakdown,
+    generate_situation_analysis,
+)
 from app.services.letters import render_all_letters
 from app.services.runway import calculate_runway
 from app.services.sequencer import generate_plan
@@ -347,13 +356,37 @@ def _text_to_pdf(text: str, title: str) -> bytes:
     return buf.getvalue()
 
 
+AI_BODY_STYLE = ParagraphStyle(
+    "AIBody",
+    parent=BODY_STYLE,
+    leftIndent=8,
+    borderPadding=4,
+    backColor=colors.HexColor("#F8FAFC"),
+)
+
+
+def _add_ai_section(story: list, text: str) -> None:
+    """Append an AI-generated text block to the story."""
+    if not text:
+        return
+    for para in text.split("\n\n"):
+        para = para.strip()
+        if para:
+            story.append(Paragraph(para.replace("\n", "<br/>"), AI_BODY_STYLE))
+    story.append(Spacer(1, 10))
+
+
 def _build_overall_summary_pdf(
     request: PacketBuildRequest,
     deferrable_estimates: list[DeferrableEstimate],
     checklist: list[ChecklistItem],
     total_expenses: float,
+    *,
+    situation: SituationAnalysisResult | None = None,
+    financial: FinancialBreakdownResult | None = None,
+    narratives: ActionNarrativesResult | None = None,
 ) -> bytes:
-    """Generate OverallSummary.pdf: holistic overview, numbers, what to ask for, steps, where to send, resources."""
+    """Generate OverallSummary.pdf: holistic overview, AI insights, numbers, steps, resources."""
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, topMargin=0.75 * inch)
     story = []
@@ -374,7 +407,12 @@ def _build_overall_summary_pdf(
         "Use it for relief applications and immediate runway actions (forbearance, waivers, SBA, FEMA).",
         BODY_STYLE,
     ))
-    story.append(Spacer(1, 16))
+    story.append(Spacer(1, 12))
+
+    # --- AI: Situation Assessment (injected after overview) ---
+    if situation and situation.assessment_text:
+        story.append(Paragraph("Situation Assessment", HEADING_STYLE))
+        _add_ai_section(story, situation.assessment_text)
 
     # 2. Your numbers
     story.append(Paragraph("Your Numbers", HEADING_STYLE))
@@ -398,7 +436,21 @@ def _build_overall_summary_pdf(
         ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
     ]))
     story.append(t)
-    story.append(Spacer(1, 16))
+    story.append(Spacer(1, 12))
+
+    # --- AI: Financial Breakdown (injected after numbers) ---
+    if financial:
+        if financial.expense_analysis_text:
+            story.append(Paragraph("Expense Analysis", HEADING_STYLE))
+            _add_ai_section(story, financial.expense_analysis_text)
+
+        if financial.scenarios_text:
+            story.append(Paragraph("Runway Scenarios", HEADING_STYLE))
+            _add_ai_section(story, financial.scenarios_text)
+
+        if financial.weekly_narrative_text:
+            story.append(Paragraph("Week-by-Week Cash Outlook", HEADING_STYLE))
+            _add_ai_section(story, financial.weekly_narrative_text)
 
     # 3. What to ask for
     story.append(Paragraph("What to Ask For", HEADING_STYLE))
@@ -408,14 +460,33 @@ def _build_overall_summary_pdf(
         story.append(Spacer(1, 4))
     story.append(Spacer(1, 8))
 
-    # 4. Steps towards action
+    # 4. Steps towards action (with AI-enriched narratives)
     story.append(Paragraph("Steps Towards Action", HEADING_STYLE))
     for item in checklist:
         line = f"<b>{item.step_number}. {item.title}</b> — Time: {item.time_estimate_min} min."
         if item.attached_file:
             line += f" Attach: {item.attached_file}"
         story.append(Paragraph(line, BODY_STYLE))
-        story.append(Paragraph(f"   Why: {item.why}", BODY_STYLE))
+        # Use AI personalized_why if available, otherwise original why
+        if narratives and item.step_number in narratives.personalized_whys:
+            story.append(Paragraph(
+                f"   Why: {narratives.personalized_whys[item.step_number]}",
+                BODY_STYLE,
+            ))
+        else:
+            story.append(Paragraph(f"   Why: {item.why}", BODY_STYLE))
+        # AI call/email script
+        if narratives and item.step_number in narratives.call_scripts:
+            story.append(Paragraph(
+                f"   <i>Script: {narratives.call_scripts[item.step_number]}</i>",
+                AI_BODY_STYLE,
+            ))
+        # AI attach reminder
+        if narratives and item.step_number in narratives.attach_reminders:
+            story.append(Paragraph(
+                f"   <i>Files to attach: {narratives.attach_reminders[item.step_number]}</i>",
+                AI_BODY_STYLE,
+            ))
         story.append(Spacer(1, 4))
     story.append(Spacer(1, 8))
 
@@ -520,13 +591,72 @@ async def build_packet(
     )
     total_expenses = sum(e.amount for e in request.expense_items)
 
+    # --- AI insight generation (all three run concurrently) ---
+    declaration_title = (
+        request.declarations[0].declaration_title
+        if request.declarations
+        else "the recent disaster"
+    )
+    programs = []
+    if request.declarations:
+        d0 = request.declarations[0]
+        if d0.ih_program:
+            programs.append("Individual and Households")
+        if d0.ia_program:
+            programs.append("Individual Assistance")
+        if d0.pa_program:
+            programs.append("Public Assistance")
+        if d0.hm_program:
+            programs.append("Hazard Mitigation")
+
+    situation_task = generate_situation_analysis(
+        business_name=request.user_info.business_name or "Your business",
+        business_type=request.runway.business_type,
+        disaster_id=request.disaster_id,
+        declaration_title=declaration_title,
+        programs=programs,
+        runway_days=request.runway_days,
+        daily_burn=request.daily_burn,
+        cash_on_hand=request.runway.cash_on_hand,
+        monthly_rent=request.runway.monthly_rent,
+        monthly_payroll=request.runway.monthly_payroll,
+        days_closed=request.runway.days_closed,
+        num_employees=request.runway.num_employees,
+        expense_total=total_expenses,
+        damage_claim_count=len(request.damage_claims),
+    )
+    financial_task = generate_financial_breakdown(
+        expense_items=request.expense_items,
+        daily_burn=request.daily_burn,
+        runway_days=request.runway_days,
+        monthly_rent=request.runway.monthly_rent,
+        monthly_payroll=request.runway.monthly_payroll,
+        cash_on_hand=request.runway.cash_on_hand,
+        deferrable_estimates=deferrable_estimates,
+    )
+    narratives_task = generate_action_narratives(
+        checklist=action_checklist,
+        business_name=request.user_info.business_name or "Your business",
+        business_type=request.runway.business_type,
+        disaster_id=request.disaster_id,
+        daily_burn=request.daily_burn,
+        runway_days=request.runway_days,
+    )
+
+    situation_result, financial_result, narratives_result = await asyncio.gather(
+        situation_task, financial_task, narratives_task,
+    )
+
     with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        # 0. OverallSummary.pdf (read this first)
+        # 0. OverallSummary.pdf (read this first — now with AI insights)
         overall_pdf = _build_overall_summary_pdf(
             request=request,
             deferrable_estimates=deferrable_estimates,
             checklist=action_checklist,
             total_expenses=total_expenses,
+            situation=situation_result,
+            financial=financial_result,
+            narratives=narratives_result,
         )
         zf.writestr("OverallSummary.pdf", overall_pdf)
         files_included_paths.append("OverallSummary.pdf")
@@ -616,5 +746,7 @@ async def build_packet(
         business_name=business_name,
         disaster_id=disaster_id,
         one_line_summary=one_line_summary,
+        key_insights=situation_result.key_insights if situation_result else [],
+        urgency_level=situation_result.urgency_level if situation_result else "moderate",
     )
     return zip_buf.getvalue(), files_included, results_summary

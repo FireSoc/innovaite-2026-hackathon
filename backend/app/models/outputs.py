@@ -1,9 +1,34 @@
 """Response Pydantic models for all API endpoints."""
 
+from enum import Enum
+
 from pydantic import BaseModel, Field
 from app.models.evidence import ExpenseItem, RenameEntry, DamageClaim, MissingEvidence
 from app.models.actions import ChecklistItem
 from app.models.inputs import Declaration
+
+
+class UrgencyLevel(str, Enum):
+    CRITICAL = "critical"
+    URGENT = "urgent"
+    MODERATE = "moderate"
+
+
+class InsightUrgency(str, Enum):
+    CRITICAL = "critical"
+    ACTION_NEEDED = "action_needed"
+    INFORMATIONAL = "informational"
+
+
+class KeyInsight(BaseModel):
+    """A single AI-generated insight surfaced on the results page."""
+
+    title: str = Field(..., description="Short headline, e.g. 'Payroll deadline in 8 days'")
+    detail: str = Field(..., description="1-2 sentence explanation")
+    urgency: InsightUrgency = Field(
+        default=InsightUrgency.INFORMATIONAL,
+        description="Urgency tag for color-coding in the UI",
+    )
 
 
 class EligibilityResponse(BaseModel):
@@ -53,6 +78,14 @@ class ResultsSummary(BaseModel):
     one_line_summary: str = Field(
         ...,
         description="Template-based one-line summary for the results page",
+    )
+    key_insights: list[KeyInsight] = Field(
+        default_factory=list,
+        description="3-5 AI-generated headline insights for the results page",
+    )
+    urgency_level: str = Field(
+        default="moderate",
+        description="Overall urgency classification: critical / urgent / moderate",
     )
 
 

@@ -126,37 +126,6 @@ export function PacketSummary({
           </div>
         </Card>
       </motion.div>
-
-      {/* File list — driven by backend files_included when available */}
-      <Card padding="sm">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">
-          {PACKET_INCLUDED_FILES_HEADING}
-        </h3>
-        <div className="space-y-0.5">
-          {filesIncluded.length > 0 ? (
-            filesIncluded.map((file, i) => (
-              <motion.div
-                key={file.path}
-                initial={{ opacity: 0, x: 8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + i * 0.06 }}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent transition-colors group"
-              >
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors">
-                  <FileText className="h-4 w-4" />
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{file.path}</p>
-                  <p className="text-xs text-muted-foreground">{file.description}</p>
-                </div>
-                <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
-              </motion.div>
-            ))
-          ) : (
-            <p className="text-xs text-muted-foreground px-2 py-2">No file list available.</p>
-          )}
-        </div>
-      </Card>
     </div>
   );
 }

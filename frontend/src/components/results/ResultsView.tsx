@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useWizard } from "@/hooks/useWizardStore";
 import { ActionPlan } from "./ActionPlan";
+import { KeyInsights } from "./KeyInsights";
 import { PacketSummary } from "./PacketSummary";
 import { Button } from "@/components/ui/Button";
 import { Particles } from "@/components/magicui/Particles";
@@ -12,6 +13,14 @@ import { RESULTS_HEADLINE, RESULTS_SUBTITLE } from "@/lib/copy";
 export function ResultsView() {
   const { state, dispatch } = useWizard();
   const { planResult, packetBlob, packetFilename, resultsSummary, filesIncluded } = state;
+
+  const urgencyLevel = resultsSummary?.urgency_level ?? "moderate";
+  const urgencyConfig: Record<string, { label: string; color: string }> = {
+    critical: { label: "Critical", color: "text-danger" },
+    urgent: { label: "Urgent", color: "text-amber-dark" },
+    moderate: { label: "Moderate", color: "text-success" },
+  };
+  const urgency = urgencyConfig[urgencyLevel] ?? urgencyConfig.moderate;
 
   return (
     <div className="min-h-screen bg-muted/30 relative">
@@ -43,6 +52,11 @@ export function ResultsView() {
             className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-3"
           >
             {RESULTS_HEADLINE}
+            {resultsSummary?.urgency_level && (
+              <span className={`ml-3 text-base font-semibold ${urgency.color}`}>
+                ({urgency.label} Priority)
+              </span>
+            )}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 12 }}
@@ -54,6 +68,13 @@ export function ResultsView() {
           </motion.p>
         </div>
       </div>
+
+      {/* Key Insights cards — between header and two-column content */}
+      {resultsSummary?.key_insights && resultsSummary.key_insights.length > 0 && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10">
+          <KeyInsights insights={resultsSummary.key_insights} />
+        </div>
+      )}
 
       {/* Two-column content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
