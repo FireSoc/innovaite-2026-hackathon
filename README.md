@@ -1,6 +1,6 @@
 #  Remedy 
-innovaite-2026-hackathon.vercel.app
-The disaster relief product for small business; building a suitable action plan for recovery
+- innovaite-2026-hackathon.vercel.app
+- The risk mitigation tool to save communities
 
 ---
 
@@ -26,15 +26,14 @@ The disaster relief product for small business; building a suitable action plan 
 - **If given longer, what would be the next improvement you would make?**  
   - API performance – Parallelize OCR for evidence extraction and letter rendering; add shared HTTP client and eligibility caching
   - Evidence pipeline – Stream processing so users see partial results while more files are processed
-  - Better context - See 
-  - UI/UX polish – Progress indicators during packet generation and clearer loading states for long-running steps
+  - Better context - Find APIs and customize AI models for different counties and areas based off environmental conditions 
 
 ---
 
 ## Set Up Instructions
   - Deployed fullstack: innovaite-2026-hackathon.vercel.app
   
-  - Install requirements.txt in backend.
+  - Install requirements.txt in backend - venv recommended
   - Setup an .env file with your Commonstack.ai API key
   - You need both the backend and frontend running. The frontend calls the backend API at http://127.0.0.1:8000 by default.
 
@@ -46,6 +45,12 @@ The disaster relief product for small business; building a suitable action plan 
 
 ### Install
 ```bash
-git clone {your-repo-url}
-cd {your-repo-folder}
-{install-command}
+git clone https://github.com/FireSoc/innovaite-2026-hackathon.git
+
+# backend
+cd backend
+uvicorn ap
+
+# frontend
+cd frontend
+npm run dev
