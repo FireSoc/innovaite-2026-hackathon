@@ -149,6 +149,10 @@ def _build_damage_summary(damage_claims: list[DamageClaim]) -> bytes:
             ))
             story.append(Paragraph(f"   {claim.detail}", BODY_STYLE))
             story.append(Paragraph(
+                f"   <i>Source file: {claim.source_file}</i>",
+                BODY_STYLE,
+            ))
+            story.append(Paragraph(
                 f"   <i>Source: {claim.source_text[:100]}...</i>" if len(claim.source_text) > 100
                 else f"   <i>Source: {claim.source_text}</i>",
                 BODY_STYLE,

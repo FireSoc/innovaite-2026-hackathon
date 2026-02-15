@@ -7,6 +7,7 @@ import { WIZARD_STEPS } from "@/lib/constants";
 import { Check } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
+import { Footer } from "@/components/Footer";
 
 interface WizardShellProps {
   children: React.ReactNode;
@@ -48,12 +49,17 @@ export function WizardShell({ children }: WizardShellProps) {
         >
           <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3">
             <div className="flex items-center justify-between">
-              {/* Logo */}
-              <div className="flex items-center gap-2 mr-6">
-                <Image src="/logo.png" alt="Remedy" width={28} height={28} className="h-7 w-7 object-contain" />
-                <span className="text-sm font-semibold text-foreground hidden sm:block">
-                  Remedy
-                </span>
+              {/* Logo — Remedy prominence */}
+              <div className="flex items-center gap-2.5 mr-6 shrink-0">
+                <Image src="/logo.png" alt="Remedy" width={32} height={32} className="h-8 w-8 object-contain" />
+                <div className="flex flex-col">
+                  <span className="text-base font-bold text-foreground leading-tight">
+                    Remedy
+                  </span>
+                  <span className="hidden lg:inline text-[11px] text-muted-foreground font-medium uppercase-label">
+                    Disaster Relief Made Simple
+                  </span>
+                </div>
               </div>
 
               {/* Steps */}
@@ -157,6 +163,8 @@ export function WizardShell({ children }: WizardShellProps) {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      <Footer />
     </div>
   );
 }

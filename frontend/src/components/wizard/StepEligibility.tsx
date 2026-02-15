@@ -66,9 +66,10 @@ export function StepEligibility() {
           className="flex items-center gap-2 text-amber mb-3"
         >
           <MapPin className="h-5 w-5" />
-          <span className="text-sm font-semibold uppercase tracking-wider">
+          <span className="text-sm font-semibold uppercase-label">
             Step 1
           </span>
+          <span className="text-muted-foreground/70 text-xs font-medium">· Remedy</span>
         </motion.div>
         <motion.h2
           initial={{ opacity: 0, y: 8 }}

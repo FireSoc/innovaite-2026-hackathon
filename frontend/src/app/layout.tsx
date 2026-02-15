@@ -25,6 +25,22 @@ export const metadata: Metadata = {
     "SBA loan",
     "emergency funding",
   ],
+  icons: {
+    icon: "/logo.png",
+    apple: "/apple-touch-icon.png",
+  },
+  openGraph: {
+    title: "Remedy — Disaster Relief Packet Generator",
+    description:
+      "Get your submission-ready disaster relief packet in 30 minutes. FEMA eligibility, financial runway analysis, and AI-powered evidence processing. Powered by Remedy.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Remedy — Disaster Relief Packet Generator",
+    description:
+      "Get your submission-ready disaster relief packet in 30 minutes. FEMA eligibility, financial runway analysis, and AI-powered evidence processing.",
+  },
 };
 
 export default function RootLayout({

@@ -6,12 +6,12 @@ import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center font-medium cursor-pointer transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex items-center justify-center font-medium cursor-pointer transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         primary:
-          "bg-primary text-primary-foreground hover:bg-amber-dark shadow-md hover:shadow-lg active:scale-[0.98]",
+          "bg-primary text-primary-foreground hover:bg-amber-dark hover:shadow-lg shadow-md active:scale-[0.98]",
         secondary:
           "bg-card text-card-foreground border border-border hover:bg-accent hover:border-ring/30 shadow-sm",
         ghost:
@@ -24,10 +24,10 @@ const buttonVariants = cva(
           "border border-border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
       },
       size: {
-        sm: "h-8 px-3 text-sm gap-1.5 rounded-lg",
-        md: "h-10 px-4 text-sm gap-2 rounded-xl",
-        lg: "h-12 px-6 text-base gap-2.5 rounded-xl",
-        xl: "h-14 px-8 text-lg gap-3 rounded-2xl",
+        sm: "h-9 min-h-[36px] px-3 text-sm gap-1.5 rounded-lg",
+        md: "h-11 min-h-[44px] px-4 text-sm gap-2 rounded-xl",
+        lg: "h-12 min-h-[44px] px-6 text-base gap-2.5 rounded-xl",
+        xl: "h-14 min-h-[44px] px-8 text-lg gap-3 rounded-2xl",
       },
     },
     defaultVariants: {

@@ -82,7 +82,7 @@ export function StepHero() {
           transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
-          className="absolute top-1/3 left-1/4 w-[400px] h-[400px] rounded-full opacity-[0.04]"
+          className="absolute top-1/3 left-1/4 w-[400px] h-[400px] rounded-full opacity-[0.05]"
           style={{
             background: "radial-gradient(circle, #3B82F6 0%, transparent 70%)",
           }}
@@ -93,56 +93,82 @@ export function StepHero() {
           }}
           transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
         />
+        <motion.div
+          className="absolute top-2/3 right-1/3 w-[350px] h-[350px] rounded-full opacity-[0.04]"
+          style={{
+            background: "radial-gradient(circle, #8B5CF6 0%, transparent 70%)",
+          }}
+          animate={{
+            scale: [1, 1.08, 1],
+            x: [0, -10, 0],
+            y: [0, 20, 0],
+          }}
+          transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+        />
         {/* Grid pattern */}
         <div
-          className="absolute inset-0 opacity-[0.025]"
+          className="absolute inset-0 opacity-[0.04]"
           style={{
             backgroundImage:
               "linear-gradient(var(--color-navy) 1px, transparent 1px), linear-gradient(to right, var(--color-navy) 1px, transparent 1px)",
             backgroundSize: "60px 60px",
           }}
         />
+        {/* Orange dots at grid vertices — tiniest pop */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 0 0, rgba(180, 83, 9, 0.4) 1.5px, transparent 2px)",
+            backgroundSize: "60px 60px",
+          }}
+        />
       </div>
 
       {/* Nav bar */}
-      <motion.nav
+      <motion.header
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="w-full px-6 py-5"
+        className="w-full border-b border-border/60"
       >
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Image src="/logo.png" alt="Remedy" width={36} height={36} className="h-9 w-9 object-contain" />
-            <span className="text-lg font-bold text-foreground tracking-tight">
-              Remedy
-            </span>
+        <div className="max-w-6xl mx-auto flex items-center justify-between pl-4 pr-6 py-5">
+          <div className="flex items-center gap-3 shrink-0">
+            <Image src="/logo.png" alt="Remedy" width={40} height={40} className="h-10 w-10 object-contain" />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+              <span className="text-xl font-bold text-foreground tracking-tight">
+                Remedy
+              </span>
+              <span className="hidden lg:inline text-muted-foreground text-sm font-medium">
+                | Disaster Relief Made Simple
+              </span>
+            </div>
           </div>
           <div className="hidden sm:flex items-center gap-6 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 transition-colors hover:text-foreground cursor-default">
               <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
               Open Source
             </span>
-            <span>Free Forever</span>
+            <span className="transition-colors hover:text-foreground cursor-default">Free Forever</span>
           </div>
         </div>
-      </motion.nav>
+      </motion.header>
 
       {/* Hero content */}
-      <div className="flex-1 flex items-center justify-center px-6 pb-16">
-        <div className="max-w-3xl mx-auto text-center">
+      <div className="flex-1 flex items-center justify-center px-6 py-20 pb-16 sm:py-24">
+        <div className="max-w-4xl mx-auto text-center">
           {/* Pill badge */}
           <motion.div
             initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber/8 border border-amber/15 text-amber-dark text-sm font-medium mb-8 backdrop-blur-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber/8 border border-amber/15 text-amber-dark text-sm font-medium mb-10 backdrop-blur-sm uppercase-label"
           >
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-amber" />
             </span>
-            Disaster Relief Made Simple
+            Remedy — Disaster Relief Made Simple
           </motion.div>
 
           {/* Headline */}
@@ -150,7 +176,7 @@ export function StepHero() {
             initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground tracking-tight leading-[1.08] mb-6"
+            className="display-headline text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-foreground tracking-tight mb-8"
           >
             Your relief packet,{" "}
             <Highlighter
@@ -168,34 +194,43 @@ export function StepHero() {
           </motion.h1>
 
           {/* Subheadline */}
-          <motion.p
+          <motion.div
             initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.7, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-12"
+            className="max-w-2xl mx-auto mb-14"
           >
-            Remedy generates a submission-ready disaster relief packet with
-            FEMA eligibility verification, financial runway analysis, and
-            AI-powered evidence processing — so you can focus on recovery.
-          </motion.p>
+            <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-2">
+              Remedy generates a submission-ready disaster relief packet with
+              FEMA eligibility verification, financial runway analysis, and
+              AI-powered evidence processing — so you can focus on recovery.
+            </p>
+            <p className="text-base sm:text-lg text-muted-foreground/90 leading-relaxed">
+              We handle the paperwork. You focus on recovery.
+            </p>
+          </motion.div>
 
           {/* CTA */}
           <motion.div
             initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.7, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col items-center gap-4"
+            className="flex flex-col items-center gap-5"
           >
             <ShimmerButton
               onClick={() => dispatch({ type: "NEXT_STEP" })}
               shimmerDuration="3s"
-              className="shadow-[0_0_30px_rgb(245_158_11/0.2)]"
+              background="var(--gradient-cta)"
+              className="min-h-[44px] shadow-[0_0_30px_rgb(245_158_11/0.15)] hover:shadow-[0_0_40px_rgb(245_158_11/0.2)]"
             >
               Start Your Packet
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </ShimmerButton>
             <p className="text-sm text-muted-foreground">
               No account needed · Your data stays private · Takes ~5 minutes
+            </p>
+            <p className="text-xs text-muted-foreground/80 italic">
+              Your journey to recovery, powered by Remedy
             </p>
           </motion.div>
         </div>
@@ -206,9 +241,9 @@ export function StepHero() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full px-6 pb-12"
+        className="w-full px-6 pb-16"
       >
-        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-5">
           {trustBadges.map((badge, i) => (
             <motion.div
               key={badge.title}
@@ -219,7 +254,7 @@ export function StepHero() {
                 delay: 0.9 + i * 0.1,
                 ease: [0.16, 1, 0.3, 1],
               }}
-              className="group flex flex-col items-center text-center p-5 rounded-2xl bg-card/60 border border-border/50 backdrop-blur-sm hover:border-amber/20 hover:shadow-md hover:-translate-y-1 transition-all duration-150"
+              className="group flex flex-col items-center text-center p-6 rounded-2xl bg-card/70 border border-border/40 backdrop-blur-sm shadow-soft hover:border-amber/25 hover:shadow-card hover:-translate-y-0.5 transition-all duration-200 focus-within:ring-2 focus-within:ring-amber/30 focus-within:ring-offset-2"
             >
               <div
                 className={`h-11 w-11 rounded-xl ${badge.iconBg} flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-110`}

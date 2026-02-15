@@ -29,7 +29,7 @@ const ShimmerButton = forwardRef<HTMLButtonElement, ShimmerButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "group relative inline-flex h-14 cursor-pointer items-center justify-center gap-3 overflow-hidden whitespace-nowrap px-8 text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:shadow-xl active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
+          "group relative inline-flex min-h-[44px] h-14 cursor-pointer items-center justify-center gap-3 overflow-hidden whitespace-nowrap px-8 text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 disabled:hover:scale-100",
           className
         )}
         style={{
@@ -52,12 +52,12 @@ const ShimmerButton = forwardRef<HTMLButtonElement, ShimmerButtonProps>(
           />
         </div>
 
-        {/* Glow effect on hover */}
+        {/* Glow effect on hover — subtle */}
         <div
-          className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-60"
           style={{
             borderRadius,
-            background: `radial-gradient(ellipse at center, ${shimmerColor}15 0%, transparent 70%)`,
+            background: `radial-gradient(ellipse at center, ${shimmerColor}12 0%, transparent 70%)`,
           }}
         />
 

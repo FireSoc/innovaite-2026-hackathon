@@ -1,19 +1,15 @@
 """Evidence Auto-Builder — the primary AI feature.
 
-Uses Google Gemini Vision to extract structured expense/damage data
-from uploaded images and PDFs in a single multimodal pass.
-
-Hard guardrails:
-- Every extracted amount/date must reference visible source text.
-- LLM normalizes/categorizes but must not invent values.
-- Strict Pydantic validation with retry-once semantics.
+Two-path extraction: classify files as document vs photo, then run
+document path (expense extraction) and photo path (damage analysis) separately.
 """
 
 import logging
 import re
 from pathlib import Path
+from typing import Literal
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from app.models.evidence import (
     ConfidenceLevel,
@@ -26,6 +22,9 @@ from app.models.outputs import EvidenceExtractionResponse
 from app.services.llm_client import complete_json
 
 logger = logging.getLogger(__name__)
+
+# Image MIMEs supported by vision APIs (CommonStack and Gemini); PDFs are documents.
+EVIDENCE_IMAGE_MIME_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
 
 # Evidence categories we expect for a complete submission
 EXPECTED_EVIDENCE_CATEGORIES = [
@@ -41,10 +40,133 @@ EXPECTED_EVIDENCE_CATEGORIES = [
 
 
 class _RawExtractionResult(BaseModel):
-    """Internal schema sent to Gemini for structured extraction."""
+    """Internal schema for document path: expense-only extraction."""
 
     expense_items: list[ExpenseItem] = []
+
+
+class _FileClassEntry(BaseModel):
+    """Single file classification: document or photo."""
+
+    filename: str = Field(..., description="Exact filename from the uploaded list")
+    type: Literal["document", "photo"] = Field(
+        ...,
+        description="document = receipt, bill, statement, form; photo = damage, site, equipment, general photo",
+    )
+
+
+class _FileClassificationResult(BaseModel):
+    """Result of classifying each uploaded file as document or photo."""
+
+    entries: list[_FileClassEntry] = Field(
+        ...,
+        description="One entry per attached file, in the same order as the files",
+    )
+
+
+class _DamageExtractionResult(BaseModel):
+    """Result of damage analysis on one or more photos."""
+
     damage_claims: list[DamageClaim] = []
+
+
+def _build_classification_prompt(filenames: list[str]) -> str:
+    """Build prompt for document vs photo classification."""
+    return f"""For each attached file, classify it as either "document" or "photo".
+
+- document: receipt, bill, statement, form, invoice, or any document with mainly text/tables.
+- photo: damage photo, site photo, equipment photo, or any general photograph of a scene/object.
+
+The attached files are in this exact order (one image per file):
+{chr(10).join(f"{i + 1}. {fn}" for i, fn in enumerate(filenames))}
+
+Return one entry per file in the SAME order, with "filename" set to the exact name from the list above and "type" set to either "document" or "photo"."""
+
+
+async def _classify_file_types(
+    files: list[tuple[str, bytes, str]],
+) -> list[tuple[str, Literal["document", "photo"]]]:
+    """Classify each file as document or photo. PDFs/non-images are treated as document."""
+    if not files:
+        return []
+
+    # Only send image MIMEs to the vision model; PDFs etc. default to document
+    image_files = [(fn, b, m) for fn, b, m in files if m in EVIDENCE_IMAGE_MIME_TYPES]
+    non_image_filenames = [f[0] for f in files if f[2] not in EVIDENCE_IMAGE_MIME_TYPES]
+
+    result: list[tuple[str, Literal["document", "photo"]]] = []
+
+    if not image_files:
+        return [(fn, "document") for fn, _, _ in files]
+
+    filenames_order = [f[0] for f in image_files]
+    prompt = _build_classification_prompt(filenames_order)
+    images = [(f[1], f[2]) for f in image_files]
+
+    try:
+        classification = await complete_json(
+            schema=_FileClassificationResult,
+            prompt=prompt,
+            images=images,
+            max_retries=1,
+        )
+        # Build map by filename; if order is preserved, index can also be used
+        type_by_filename = {e.filename: e.type for e in classification.entries}
+        for fn in filenames_order:
+            result.append((fn, type_by_filename.get(fn, "document")))
+    except (ValidationError, Exception) as e:
+        logger.warning(f"File classification failed, treating all as document: {e}")
+        for fn in filenames_order:
+            result.append((fn, "document"))
+
+    for fn in non_image_filenames:
+        result.append((fn, "document"))
+
+    # Preserve original file order
+    order = {fn: i for i, (fn, _, _) in enumerate(files)}
+    result.sort(key=lambda x: order.get(x[0], 0))
+    return result
+
+
+def _build_damage_photo_prompt(filename: str) -> str:
+    """Build vision-focused prompt for a single damage photo."""
+    return f"""You are analyzing a damage/evidence photo for disaster relief.
+
+This image has filename: {filename}
+
+Describe what you see:
+- Type of damage (water, wind, structural, equipment, etc.) if any
+- Area or location (e.g. kitchen, roof, storefront)
+- Severity if apparent (minor, moderate, severe)
+- Any visible text (e.g. signage, labels)
+
+Set source_file to exactly: {filename}
+For source_text use "Visual: <description>" when there is no document text, or the literal text if something is readable.
+If the image shows no damage (e.g. general site photo), still produce one claim with label like "General site photo" and describe the scene; set source_file to {filename}.
+
+Return valid JSON with damage_claims array (at least one claim for this image)."""
+
+
+async def _extract_damage_from_photos(
+    photo_files: list[tuple[str, bytes, str]],
+) -> list[DamageClaim]:
+    """Run damage analysis on files classified as photos. One call per image for accuracy."""
+    claims: list[DamageClaim] = []
+    # Only process image MIMEs; skip PDFs that were classified as photo (treat as no damage)
+    for filename, file_bytes, mime_type in photo_files:
+        if mime_type not in EVIDENCE_IMAGE_MIME_TYPES:
+            continue
+        try:
+            result = await complete_json(
+                schema=_DamageExtractionResult,
+                prompt=_build_damage_photo_prompt(filename),
+                images=[(file_bytes, mime_type)],
+                max_retries=1,
+            )
+            claims.extend(result.damage_claims)
+        except (ValidationError, Exception) as e:
+            logger.warning(f"Damage extraction failed for {filename}: {e}")
+    return claims
 
 
 def _build_extraction_prompt(
@@ -65,15 +187,14 @@ def _build_extraction_prompt(
 
     context_str = "\n".join(context_parts) if context_parts else "No additional context provided."
 
-    return f"""You are a disaster-relief document analyst. Extract structured expense and damage data from the uploaded images/documents.
+    return f"""You are a disaster-relief document analyst. Extract ONLY expense items from the uploaded documents (receipts, bills, statements). Do not extract damage or photo descriptions.
 
 CRITICAL RULES:
-1. Every amount and date you extract MUST reference visible text in the image. Set source_text to the LITERAL text snippet you read.
+1. Every amount and date you extract MUST reference visible text in the document. Set source_text to the LITERAL text snippet you read.
 2. NEVER invent or estimate values — only extract what is clearly visible.
 3. If text is unclear or partially visible, set confidence to "needs_review".
 4. For each expense item, identify: vendor name, date, dollar amount, and category.
-5. For damage claims, describe what damage is visible in photos with specific details.
-6. Categories for expenses: rent, utilities, payroll, supplies, repairs, insurance, other.
+5. Categories for expenses: rent, utilities, payroll, supplies, repairs, insurance, other.
 
 CONTEXT:
 {context_str}
@@ -81,9 +202,40 @@ CONTEXT:
 UPLOADED FILES ({len(filenames)} files):
 {chr(10).join(f"- {fn}" for fn in filenames)}
 
-For each uploaded file, extract all visible expense items and damage evidence.
-Set source_file to the corresponding filename from the list above.
-Return valid JSON matching the schema exactly."""
+For each uploaded file, extract all visible expense items. Set source_file to the corresponding filename from the list above.
+Return valid JSON with expense_items only (no damage_claims)."""
+
+
+async def _extract_expenses_from_documents(
+    document_files: list[tuple[str, bytes, str]],
+    business_type: str = "",
+    county: str = "",
+    state: str = "",
+    disaster_id: str = "",
+) -> list[ExpenseItem]:
+    """Run expense extraction only on files classified as documents."""
+    if not document_files:
+        return []
+    filenames = [f[0] for f in document_files]
+    images = [(f[1], f[2]) for f in document_files]
+    prompt = _build_extraction_prompt(
+        filenames=filenames,
+        business_type=business_type,
+        county=county,
+        state=state,
+        disaster_id=disaster_id,
+    )
+    try:
+        raw = await complete_json(
+            schema=_RawExtractionResult,
+            prompt=prompt,
+            images=images,
+            max_retries=1,
+        )
+        return raw.expense_items
+    except (ValidationError, Exception) as e:
+        logger.warning(f"Document expense extraction failed: {e}")
+        return []
 
 
 def _generate_rename_map(
@@ -97,7 +249,7 @@ def _generate_rename_map(
     for fn in filenames:
         # Find expense items associated with this file
         file_expenses = [e for e in expense_items if e.source_file == fn]
-        file_damages = [d for d in damage_claims if fn in (d.source_text or "")]
+        file_damages = [d for d in damage_claims if d.source_file == fn]
 
         ext = Path(fn).suffix.lower() or ".jpg"
         base = Path(fn).stem
@@ -205,34 +357,26 @@ async def extract_evidence(
         )
 
     filenames = [f[0] for f in files]
-    images = [(f[1], f[2]) for f in files]
+    file_by_name = {f[0]: f for f in files}
 
-    # Build prompt
-    prompt = _build_extraction_prompt(
-        filenames=filenames,
+    # 1. Classify each file as document or photo
+    classification = await _classify_file_types(files)
+    document_files = [file_by_name[fn] for fn, t in classification if t == "document"]
+    photo_files = [file_by_name[fn] for fn, t in classification if t == "photo"]
+
+    # 2. Document path: expense extraction only
+    expense_items = await _extract_expenses_from_documents(
+        document_files,
         business_type=business_type,
         county=county,
         state=state,
         disaster_id=disaster_id,
     )
 
-    # Call Gemini Vision for extraction
-    try:
-        raw_result = await complete_json(
-            schema=_RawExtractionResult,
-            prompt=prompt,
-            images=images,
-            max_retries=1,
-        )
-        expense_items = raw_result.expense_items
-        damage_claims = raw_result.damage_claims
-    except (ValidationError, Exception) as e:
-        logger.error(f"Evidence extraction failed: {e}")
-        # Degrade gracefully: return empty extraction with all missing
-        expense_items = []
-        damage_claims = []
+    # 3. Photo path: damage analysis only
+    damage_claims = await _extract_damage_from_photos(photo_files)
 
-    # Post-processing
+    # 4. Merge and post-processing
     rename_map = _generate_rename_map(filenames, expense_items, damage_claims)
     missing_evidence = _detect_missing_evidence(expense_items, damage_claims, filenames)
 
