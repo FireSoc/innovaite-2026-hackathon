@@ -127,12 +127,12 @@ export function PacketSummary({
         </Card>
       </motion.div>
 
-      {/* File list — driven by backend files_included when available */}
+      {/* Included files list */}
       <Card padding="sm">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">
           {PACKET_INCLUDED_FILES_HEADING}
         </h3>
-        <div className="space-y-0.5">
+        <div className="max-h-60 overflow-y-auto space-y-0.5 pr-1">
           {filesIncluded.length > 0 ? (
             filesIncluded.map((file, i) => (
               <motion.div

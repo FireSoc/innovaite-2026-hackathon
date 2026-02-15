@@ -597,29 +597,48 @@ def _build_overall_summary_pdf(
 
     # 5. Where to send these documents
     story.append(Paragraph("Where to Send These Documents", HEADING_STYLE))
+    table_cell_style = ParagraphStyle(
+        "TableCell", parent=BODY_STYLE, fontSize=9, leading=12,
+    )
+    table_header_style = ParagraphStyle(
+        "TableHeader", parent=table_cell_style,
+        fontName="Helvetica-Bold", textColor=colors.white,
+    )
     send_data = [
-        ["Document / Letter", "Send to"],
-        ["Landlord forbearance letter (Letters/)", "Landlord or property manager"],
-        ["Utility waiver letter (Letters/)", "Your utility company"],
-        ["Lender extension letter (Letters/)", "Each vendor or lender"],
         [
-            "Cover sheet + Damage summary + Expense ledger + Evidence",
-            f"SBA disaster loan application (reference disaster {disaster_id})",
+            Paragraph("Document / Letter", table_header_style),
+            Paragraph("Send to", table_header_style),
         ],
         [
-            "Same packet elements + FEMA registration",
-            "FEMA — disasterassistance.gov or 1-800-621-3362",
+            Paragraph("Landlord forbearance letter (Letters/)", table_cell_style),
+            Paragraph("Landlord or property manager", table_cell_style),
+        ],
+        [
+            Paragraph("Utility waiver letter (Letters/)", table_cell_style),
+            Paragraph("Your utility company", table_cell_style),
+        ],
+        [
+            Paragraph("Lender extension letter (Letters/)", table_cell_style),
+            Paragraph("Each vendor or lender", table_cell_style),
+        ],
+        [
+            Paragraph("Cover sheet + Damage summary + Expense ledger + Evidence", table_cell_style),
+            Paragraph(f"SBA disaster loan application (reference disaster {disaster_id})", table_cell_style),
+        ],
+        [
+            Paragraph("Same packet elements + FEMA registration", table_cell_style),
+            Paragraph("FEMA — disasterassistance.gov or 1-800-621-3362", table_cell_style),
         ],
     ]
     t2 = Table(send_data, colWidths=[3 * inch, 3.5 * inch])
     t2.setStyle(TableStyle([
-        ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#4472C4")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
         ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
     ]))
     story.append(t2)
     story.append(Spacer(1, 16))

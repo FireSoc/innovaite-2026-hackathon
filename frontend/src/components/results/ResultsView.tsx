@@ -78,7 +78,42 @@ export function ResultsView() {
         </div>
       </div>
 
-      {/* Key Insights cards — between header and two-column content */}
+      {/* Two-column: Packet (left) + Action Plan (right) */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          {/* Left column: Action Plan */}
+          <motion.div
+            initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ delay: 0.25, duration: 0.6 }}
+            className="lg:col-span-3"
+          >
+            {planResult && <ActionPlan checklist={planResult.checklist} />}
+          </motion.div>
+
+          {/* Right column: Packet download + included files */}
+          <motion.div
+            initial={{ opacity: 0, y: 16, filter: "blur(4px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ delay: 0.35, duration: 0.6 }}
+            className="lg:col-span-2"
+          >
+            <div className="lg:sticky lg:top-8">
+              <PacketSummary
+                blob={packetBlob}
+                filename={packetFilename}
+                runwayDays={state.runwayResult?.runway_days}
+                businessName={state.userInfo.business_name}
+                disasterId={state.eligibilityResult?.disaster_id}
+                resultsSummary={resultsSummary}
+                filesIncluded={filesIncluded}
+              />
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Key Insights */}
       {resultsSummary?.key_insights && resultsSummary.key_insights.length > 0 && (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10">
           <KeyInsights insights={resultsSummary.key_insights} />
@@ -86,7 +121,7 @@ export function ResultsView() {
       )}
 
       {/* Data-driven feature panels */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8 pb-8 sm:pb-12 space-y-6">
         {/* Row 1: Deadlines + Benchmark side-by-side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {resultsSummary?.deadlines && resultsSummary.deadlines.length > 0 && (
@@ -111,53 +146,20 @@ export function ResultsView() {
             />
           )}
         </div>
+
       </div>
 
-      {/* Two-column content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          {/* Left column: Action Plan (wider) */}
-          <motion.div
-            initial={{ opacity: 0, x: -20, filter: "blur(4px)" }}
-            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="lg:col-span-3"
-          >
-            {planResult && <ActionPlan checklist={planResult.checklist} />}
-          </motion.div>
-
-          {/* Right column: Packet Summary */}
-          <motion.div
-            initial={{ opacity: 0, x: 20, filter: "blur(4px)" }}
-            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-            className="lg:col-span-2"
-          >
-            <div className="lg:sticky lg:top-8 space-y-6">
-              <PacketSummary
-                blob={packetBlob}
-                filename={packetFilename}
-                runwayDays={state.runwayResult?.runway_days}
-                businessName={state.userInfo.business_name}
-                disasterId={state.eligibilityResult?.disaster_id}
-                resultsSummary={resultsSummary}
-                filesIncluded={filesIncluded}
-              />
-
-              {/* Start over */}
-              <div className="text-center space-y-2">
-                <Button
-                  variant="ghost"
-                  onClick={() => dispatch({ type: "RESET" })}
-                  icon={<RotateCcw className="h-4 w-4" />}
-                  className="text-muted-foreground"
-                >
-                  Start Over
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
+      {/* Start over — full-width banner */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-[-4] mb-10">
+        <Button
+          variant="secondary"
+          size="lg"
+          onClick={() => dispatch({ type: "RESET" })}
+          icon={<RotateCcw className="h-5 w-5" />}
+          className="w-full text-base font-semibold"
+        >
+          Start Over with a New Case
+        </Button>
       </div>
 
       <Footer />
